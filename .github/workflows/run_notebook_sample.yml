@@ -1,0 +1,38 @@
+name: Run Jupyter Notebook 코드 샘플
+
+on:
+  schedule:
+    - cron: '0 15 * * *'  # 매일 오전 12시(한국시간)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-nb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install jupyter papermill nbconvert
+          pip install gspread gspread_dataframe requests pandas beautifulsoup4 lxml python-dateutil google-auth google-auth-oauthlib dateparser urllib3
+
+      - name: Run notebook with papermill
+        run: |
+          papermill "실행_코드_파일.ipynb" "실행_코드_파일_output.ipynb"
+
+      - name: Commit and push result
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add "실행_코드_파일_output.ipynb"
+          git commit -m "Automated run at $(date)" || echo "No changes to commit"
+          git push
